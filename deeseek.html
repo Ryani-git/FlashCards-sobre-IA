@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>FlashCards IA: Representação do Conhecimento</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: linear-gradient(145deg, #eef2f7 0%, #d9e2ec 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+    }
+
+    /* container principal */
+    .app-container {
+      max-width: 800px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(2px);
+      border-radius: 3rem;
+      padding: 1.8rem 1.5rem 2rem 1.5rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+    }
+
+    /* cabeçalho e progresso */
+    .study-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+      gap: 0.75rem;
+    }
+
+    .title-badge {
+      background: #2c3e66;
+      padding: 0.4rem 1.2rem;
+      border-radius: 60px;
+      color: white;
+      font-weight: 600;
+      font-size: 0.85rem;
+      letter-spacing: 0.3px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .progress-indicator {
+      background: white;
+      padding: 0.4rem 1.2rem;
+      border-radius: 60px;
+      font-weight: 600;
+      color: #1e2f4e;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.05);
+      font-size: 0.9rem;
+    }
+
+    /* flashcard 3D */
+    .flashcard-wrapper {
+      perspective: 1500px;
+      margin: 0.5rem 0 1.8rem 0;
+      cursor: pointer;
+    }
+
+    .flashcard {
+      background: transparent;
+      width: 100%;
+      height: auto;
+      min-height: 460px;
+      position: relative;
+      transition: transform 0.2s;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: auto;
+      min-height: 460px;
+      text-align: left;
+      transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+      transform-style: preserve-3d;
+      border-radius: 2rem;
+    }
+
+    .flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
+      position: relative;
+      width: 100%;
+      min-height: 460px;
+      backface-visibility: hidden;
+      border-radius: 2rem;
+      padding: 2rem 1.8rem;
+      box-shadow: 0 20px 30px -12px rgba(0, 0, 0, 0.2);
+      background: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .card-front {
+      background: linear-gradient(135deg, #ffffff 0%, #f9fbfd 100%);
+      border: 1px solid rgba(66, 153, 225, 0.2);
+    }
+
+    .card-back {
+      background: linear-gradient(135deg, #fefaf5 0%, #fff7ed 100%);
+      transform: rotateY(180deg);
+      border-left: 5px solid #3b82f6;
+    }
+
+    /* tipografia dos cards */
+    .front-question {
+      font-size: 1.65rem;
+      font-weight: 700;
+      line-height: 1.4;
+      color: #0a2b44;
+      margin-bottom: 1rem;
+    }
+
+    .front-badge {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #3b82f6;
+      background: #eef2ff;
+      display: inline-block;
+      padding: 0.2rem 0.8rem;
+      border-radius: 30px;
+      width: fit-content;
+      margin-top: 0.5rem;
+    }
+
+    .back-section {
+      margin-bottom: 1.2rem;
+    }
+
+    .back-label {
+      font-weight: 800;
+      color: #1e40af;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 0.4rem;
+      display: block;
+    }
+
+    .back-def {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #0c4a6e;
+      background: #e6f0ff;
+      padding: 0.7rem 1rem;
+      border-radius: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .back-explanation {
+      font-size: 0.98rem;
+      line-height: 1.5;
+      color: #1e293b;
+      margin-bottom: 1rem;
+    }
+
+    .back-example {
+      background: #eef2ff;
+      border-left: 3px solid #3b82f6;
+      padding: 0.8rem 1rem;
+      border-radius: 1rem;
+      font-size: 0.93rem;
+      color: #0f172a;
+    }
+
+    .example-label {
+      font-weight: 700;
+      color: #075985;
+    }
+
+    /* botões de navegação */
+    .nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-top: 1.2rem;
+    }
+
+    button {
+      background: white;
+      border: none;
+      padding: 0.8rem 1.6rem;
+      font-weight: 600;
+      font-size: 1rem;
+      border-radius: 60px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      color: #1e293b;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    button i {
+      font-style: normal;
+      font-weight: 600;
+      font-size: 1.2rem;
+    }
+
+    .btn-primary {
+      background: #1e3a5f;
+      color: white;
+      box-shadow: 0 8px 18px rgba(30, 58, 95, 0.2);
+    }
+
+    .btn-primary:hover {
+      background: #0f2c48;
+      transform: translateY(-2px);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      background: #f1f5f9;
+    }
+
+    .btn-primary:active, button:active {
+      transform: translateY(1px);
+    }
+
+    .info-footer {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.75rem;
+      color: #334155;
+      background: rgba(255, 255, 255, 0.5);
+      padding: 0.6rem;
+      border-radius: 60px;
+      width: fit-content;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    @media (max-width: 580px) {
+      .app-container {
+        padding: 1rem;
+      }
+      .card-front, .card-back {
+        padding: 1.5rem;
+        min-height: 420px;
+      }
+      .front-question {
+        font-size: 1.3rem;
+      }
+      .back-def {
+        font-size: 0.9rem;
+      }
+      button {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <div class="study-header">
+    <span class="title-badge">DeepSeek</span>
+    <span class="progress-indicator" id="progressText">0 / 0</span>
+  </div>
+
+  <div class="flashcard-wrapper" id="flashcardWrapper">
+    <div class="flashcard" id="flashcard">
+      <div class="card-inner" id="cardInner">
+        <!-- FRENTE (dinâmica) -->
+        <div class="card-front" id="cardFront">
+          <div class="front-question" id="frontQuestion">Carregando...</div>
+          <div class="front-badge">💡 toque ou espaço para virar</div>
+        </div>
+        <!-- VERSO (dinâmica) -->
+        <div class="card-back" id="cardBack">
+          <!-- conteúdo será preenchido via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-buttons">
+    <button id="prevBtn" class="btn-outline">◀ Anterior</button>
+    <button id="nextBtn" class="btn-primary">Próximo ▶</button>
+  </div>
+  <div class="info-footer">
+    ␣ Espaço vira o card | Clique no card para virar/desvirar
+  </div>
+</div>
+
+<script>
+  // ---------- BASE DE DADOS DOS FLASHCARDS (15 cards, cobrindo todos os temas obrigatórios) ----------
+  // Cada card: frente (pergunta desafiadora), verso estruturado em definição curta, explicação simplificada, exemplo prático.
+  const flashcardsData = [
+    { // 1 - Declarativo
+      front: "O que é conhecimento declarativo e qual sua principal característica na representação do conhecimento?",
+      def: "Conhecimento declarativo é o saber \"o quê\" (knowing that): fatos, conceitos, verdades e descrições estáticas do mundo.",
+      explanation: "Representa informações sobre objetos, eventos e relações, podendo ser expresso em sentenças lógicas ou afirmações. É independente da execução.",
+      example: "Saber que 'Paris é a capital da França', ou que 'um triângulo tem três lados'. Em IA, uma base de conhecimento armazena fatos como 'Sócrates é humano' e 'humanos são mortais'."
+    },
+    { // 2 - Procedural
+      front: "Como o conhecimento procedural se diferencia do declarativo? Dê exemplos de como ele é representado.",
+      def: "Conhecimento procedural é o saber \"como fazer\" (knowing how): sequências de ações, algoritmos, procedimentos para realizar tarefas.",
+      explanation: "Representado por regras, fluxogramas ou programas que descrevem processos passo a passo. Essencial para execução de tarefas.",
+      example: "Saber trocar um pneu: 1) afrouxar parafusos, 2) levantar o carro, 3) remover pneu. Em IA, regras de produção ou algoritmos de planejamento."
+    },
+    { // 3 - Heurístico
+      front: "Defina conhecimento heurístico e sua importância em problemas de IA com espaço de busca extenso.",
+      def: "Conhecimento heurístico consiste em estratégias empíricas, 'regras de ouro' ou atalhos baseados na experiência para resolver problemas eficientemente.",
+      explanation: "Não garante solução ótima, mas reduz o tempo de busca ao guiar a exploração, geralmente na ausência de um algoritmo exato.",
+      example: "No xadrez, a heurística 'controle o centro' reduz possibilidades. Em IA, funções heurísticas em busca A* estimam custo restante para solução."
+    },
+    { // 4 - Comparação Tipos conhecimento
+      front: "Quais as principais diferenças entre conhecimento declarativo, procedural e heurístico? Como eles se complementam?",
+      def: "Declarativo = saber fatos; Procedural = saber ações; Heurístico = saber atalhos eficientes (regras empíricas).",
+      explanation: "Declarativo responde 'o quê', Procedural responde 'como', Heurístico responde 'qual caminho provavelmente melhor'. Complementam-se: um sistema especialista usa fatos, regras e heurísticas para decisão.",
+      example: "Diagnóstico médico: conhecimento declarativo (sintomas e doenças), procedural (sequência de exames), heurístico (se febre alta e tosse persistente → provável pneumonia)."
+    },
+    { // 5 - Ontologias
+      front: "O que são ontologias em Inteligência Artificial? Explique sua estrutura e finalidade.",
+      def: "Ontologia é uma especificação explícita e formal de uma conceitualização: define classes, propriedades, relacionamentos e axiomas de um domínio.",
+      explanation: "Fornece um vocabulário compartilhado e estruturado para troca de conhecimento, permitindo inferência e interoperabilidade entre sistemas.",
+      example: "A ontologia FOAF (Friend of a Friend) define classes como 'Pessoa', propriedades como 'nome' e 'conhece', usada na web semântica para redes sociais."
+    },
+    { // 6 - Redes Semânticas
+      front: "Como as redes semânticas organizam o conhecimento? Quais suas vantagens e limitações?",
+      def: "Rede semântica é um grafo onde nós representam conceitos e arcos representam relações semânticas (ex: 'é-um', 'parte-de', 'tem-propriedade').",
+      explanation: "Permite representar conhecimento de forma intuitiva e visual, com herança de propriedades e fácil navegação.",
+      example: "Representação animal: nó 'Mamífero' ligado a 'Animal' por 'é-um', 'Cachorro' ligado a 'Mamífero' → herança: 'Cachorro' respira."
+    },
+    { // 7 - Frames
+      front: "Explique o conceito de frames (quadros) na representação do conhecimento e como eles utilizam herança.",
+      def: "Frame é uma estrutura de dados para representar conceitos ou objetos, organizada em slots (atributos) com valores e facetas, suportando herança entre classes.",
+      explanation: "Cada frame descreve uma entidade com atributos que podem conter valores, procedimentos ou restrições. Herança permite que subclasses herdem slots.",
+      example: "Frame 'Carro' com slots: cor, modelo, ano. Subframe 'CarroEsportivo' herda de 'Carro' e adiciona slot 'velocidade_max'. Útil em planejamento."
+    },
+    { // 8 - Lógica de Predicados
+      front: "Qual a importância da lógica de predicados de primeira ordem na representação do conhecimento? Mencione seus componentes.",
+      def: "Lógica de predicados é uma linguagem formal que utiliza predicados, variáveis, quantificadores (∀, ∃) e conectivos lógicos para representar conhecimento complexo.",
+      explanation: "Permite expressar afirmações sobre objetos e suas relações com precisão matemática, base para sistemas de prova automatizada.",
+      example: "∀x (Humano(x) → Mortal(x)) e Humano(Sócrates) deduz-se Mortal(Sócrates). Usada em Prolog e raciocínio automatizado."
+    },
+    { // 9 - Regras de Produção
+      front: "Defina regras de produção e como elas são aplicadas em sistemas baseados em conhecimento.",
+      def: "Regras de produção são estruturas condicionais no formato 'SE <condição> ENTÃO <ação>' que representam conhecimento procedural e heurístico.",
+      explanation: "O motor de inferência aplica regras encadeando (forward/backward chaining) para derivar novos fatos ou tomar decisões.",
+      example: "Sistema de diagnóstico: SE (febre AND tosse) ENTÃO (suspeita de gripe). Regras permitem modularidade e explicação do raciocínio."
+    },
+    { // 10 - Comparação Representações (ontologias x redes semânticas x frames)
+      front: "Compare ontologias, redes semânticas e frames: semelhanças, diferenças e quando usar cada abordagem.",
+      def: "Ontologias: ênfase formal, lógica, compartilhamento; Redes semânticas: grafos informais com relações; Frames: estruturas orientadas a objetos com herança.",
+      explanation: "Ontologias oferecem semântica formal (OWL), ideal para interoperabilidade. Redes semânticas são intuitivas para representações simples. Frames organizam hierarquias com slots.",
+      example: "Web semântica usa ontologias (schema.org). Sistemas de diagnóstico podem usar frames para doenças. Redes semânticas usadas em mapas conceituais educacionais."
+    },
+    { // 11 - Sistemas Especialistas
+      front: "Descreva o que é um sistema especialista, seus componentes e um exemplo de aplicação.",
+      def: "Sistema especialista é um programa de IA que emula a capacidade de decisão de um especialista humano em um domínio específico, usando base de conhecimento e motor de inferência.",
+      explanation: "Ele captura conhecimento de especialistas (regras e fatos) e aplica inferências para resolver problemas complexos, oferecendo justificativas.",
+      example: "MYCIN para diagnóstico de infecções bacterianas; atualmente, sistemas de suporte à decisão em finanças e manutenção preditiva."
+    },
+    { // 12 - Dedução
+      front: "Explique o processo de inferência por dedução, incluindo um exemplo lógico e sua garantia de verdade.",
+      def: "Dedução é um raciocínio que parte de premissas gerais para chegar a uma conclusão específica, garantindo que se as premissas são verdadeiras, a conclusão necessariamente é verdadeira.",
+      explanation: "Segue regras de inferência lógica (modus ponens, silogismo). A conclusão está contida implicitamente nas premissas.",
+      example: "Premissa 1: Todos os humanos são mortais. Premissa 2: Sócrates é humano. Conclusão: Sócrates é mortal. Usado em sistemas de verificação."
+    },
+    { // 13 - Indução
+      front: "O que é inferência indutiva? Dê um exemplo baseado em observações e discuta sua certeza.",
+      def: "Indução é o raciocínio que generaliza padrões a partir de observações específicas, produzindo conclusões prováveis, mas não garantidas.",
+      explanation: "Cria hipóteses gerais a partir de exemplos. Muito usada em aprendizado de máquina e descoberta de conhecimento.",
+      example: "Observamos 100 cisnes brancos e inferimos 'todos os cisnes são brancos'. Embora falsificável, é útil. Algoritmos de árvore de decisão induzem regras a partir de dados."
+    },
+    { // 14 - Abdução
+      front: "Como funciona a inferência abdutiva? Diferencie da dedução e apresente um exemplo de diagnóstico.",
+      def: "Abdução é o raciocínio que infere a melhor explicação para um fato observado, partindo de uma regra geral e um resultado para sugerir uma causa.",
+      explanation: "Se A então B, e B é observado, então pode-se inferir A como explicação plausível, mas não definitiva. Essencial em diagnósticos.",
+      example: "Regra: Se chove, chão molhado. Observa-se chão molhado. Abduz-se que pode ter chovido. Usado em diagnósticos médicos e detecção de falhas."
+    },
+    { // 15 - Comparação Inferências (dedução, indução, abdução)
+      front: "Dedução, indução e abdução: quais as principais diferenças e quando cada uma é aplicada?",
+      def: "Dedução: de regras para fatos específicos, garantia lógica. Indução: de fatos específicos para regras gerais, provável. Abdução: de fatos e regras para causas prováveis.",
+      explanation: "Dedução → verificação; indução → descoberta de padrões/aprendizado; abdução → explicação/diagnóstico. Em IA combinam-se para sistemas robustos.",
+      example: "Sistema de recomendação: dedução aplica regras fixas; indução aprende preferências; abdução explica por que usuário gostou de um item baseado em contexto."
+    }
+  ];
+
+  // Verificar quantidade de cards por tema (pedagógico): Tipos (cards 1-4 = 4), Representação (5-10 = 6), Aplicações (11-15 = 5) -> >=3 cada.
+  // Inclui comparações importantes e exemplos reais.
+
+  // Controle de estado
+  let currentIndex = 0;
+  let isFlipped = false;   // controla estado do flip (para reset e toggle)
+  const totalCards = flashcardsData.length;
+
+  // Elementos DOM
+  const flashcardEl = document.getElementById('flashcard');
+  const frontQuestionEl = document.getElementById('frontQuestion');
+  const cardBackEl = document.getElementById('cardBack');
+  const progressTextEl = document.getElementById('progressText');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const wrapper = document.getElementById('flashcardWrapper');
+
+  // Função para atualizar o conteúdo do verso com base no card atual (estrutura definição, explicação, exemplo)
+  function renderBackContent(card) {
+    return `
+      <div class="back-section">
+        <span class="back-label">📌 DEFINIÇÃO CURTA</span>
+        <div class="back-def">${card.def}</div>
+      </div>
+      <div class="back-section">
+        <span class="back-label">🧠 EXPLICAÇÃO SIMPLIFICADA</span>
+        <div class="back-explanation">${card.explanation}</div>
+      </div>
+      <div class="back-section">
+        <span class="back-label">✨ EXEMPLO PRÁTICO</span>
+        <div class="back-example"><span class="example-label">🔍 </span>${card.example}</div>
+      </div>
+    `;
+  }
+
+  // Renderiza o card inteiro (frente e verso) baseado no índice atual, mantendo ou resetando o flip
+  function renderCurrentCard(resetFlip = true) {
+    const card = flashcardsData[currentIndex];
+    if (!card) return;
+    
+    // Atualizar frente
+    frontQuestionEl.innerText = card.front;
+    
+    // Atualizar verso com conteúdo estruturado
+    cardBackEl.innerHTML = renderBackContent(card);
+    
+    // Reset do flip se necessário (ao navegar, voltamos para frente)
+    if (resetFlip && isFlipped) {
+      isFlipped = false;
+      flashcardEl.classList.remove('flipped');
+    } else if (!resetFlip) {
+      // usado eventualmente para manter estado, mas navegação sempre reseta.
+    }
+    
+    // Atualizar indicador de progresso
+    progressTextEl.innerText = `${currentIndex + 1} / ${totalCards}`;
+  }
+
+  // Função para virar o card (toggle)
+  function toggleFlip() {
+    isFlipped = !isFlipped;
+    if (isFlipped) {
+      flashcardEl.classList.add('flipped');
+    } else {
+      flashcardEl.classList.remove('flipped');
+    }
+  }
+
+  // Navegação
+  function nextCard() {
+    if (currentIndex + 1 < totalCards) {
+      currentIndex++;
+      renderCurrentCard(true);  // reseta o flip para frente
+    } else {
+      // Se for último, opcional: volta para o primeiro? melhor loop suave: pode ficar no último, mas indicamos.
+      if (currentIndex === totalCards - 1) {
+        // feedback sutil: apenas não faz nada, mas podemos reiniciar? melhor não loop automático.
+        // apenas efeito visual pequeno (já que é último, mantém)
+        nextBtn.style.transform = "scale(0.97)";
+        setTimeout(() => { nextBtn.style.transform = ""; }, 150);
+        return;
+      }
+    }
+  }
+
+  function prevCard() {
+    if (currentIndex - 1 >= 0) {
+      currentIndex--;
+      renderCurrentCard(true);
+    } else {
+      prevBtn.style.transform = "scale(0.97)";
+      setTimeout(() => { prevBtn.style.transform = ""; }, 150);
+    }
+  }
+
+  // Event listeners
+  prevBtn.addEventListener('click', prevCard);
+  nextBtn.addEventListener('click', nextCard);
+  
+  // Clique no wrapper do flashcard vira o card (experiência tátil)
+  wrapper.addEventListener('click', (e) => {
+    // Evita conflito caso clique nos botões, mas o botão não é filho do wrapper? O wrapper engloba só o card, seguro.
+    toggleFlip();
+  });
+  
+  // Tecla de espaço vira o card
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+      e.preventDefault();  // impede scroll da página
+      toggleFlip();
+    }
+    // Opcional: setas direita/esquerda para navegação extra (boa prática)
+    if (e.code === 'ArrowRight') {
+      e.preventDefault();
+      nextCard();
+    }
+    if (e.code === 'ArrowLeft') {
+      e.preventDefault();
+      prevCard();
+    }
+  });
+
+  // Inicialização
+  renderCurrentCard(true);
+  
+  // Ajuste adicional para garantir que a animação de flip seja suave e não quebre em diferentes alturas
+  // (não é necessário recalc, mas min-height já definido)
+  
+  // Opção de conforto: garantir que ao redimensionar não quebre perspectiva
+  window.addEventListener('resize', () => {});
+  
+  // Pequeno destaque: também podemos mostrar no console que os conteúdos seguem os requisitos
+  console.log(`Flashcards carregados: ${totalCards} cards. Temas: Tipos de conhecimento (Declarativo, Procedural, Heurístico + Comparação), Representação (Ontologias, Redes semânticas, Frames, Lógica predicados, Regras produção + Comparação), Aplicações (Sistemas especialistas, Dedução, Indução, Abdução + Comparação inferências).`);
+</script>
+</body>
+</html>

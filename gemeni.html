@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini</title>
+    <style>
+        /* CSS: Design Moderno e Responsivo */
+        :root {
+            --primary: #4a90e2;
+            --secondary: #f39c12;
+            --bg: #f0f2f5;
+            --text: #2c3e50;
+            --card-white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        /* Container do Card com Efeito Flip */
+        .flashcard-container {
+            perspective: 1000px;
+            width: 90%;
+            max-width: 500px;
+            height: 350px;
+            cursor: pointer;
+        }
+
+        .flashcard {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 15px;
+        }
+
+        .flashcard.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            box-sizing: border-box;
+            border-radius: 15px;
+            background: var(--card-white);
+        }
+
+        /* Lado de trás rotacionado */
+        .card-back {
+            transform: rotateY(180deg);
+            overflow-y: auto;
+            text-align: left;
+            align-items: flex-start;
+        }
+
+        .card-front h2 {
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .card-back h3 {
+            margin-top: 0;
+            color: var(--secondary);
+            font-size: 1.1rem;
+        }
+
+        .card-back p {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: 0.5rem 0;
+        }
+
+        .example {
+            background: #fdf2e9;
+            padding: 10px;
+            border-left: 4px solid var(--secondary);
+            font-style: italic;
+            width: 100%;
+        }
+
+        /* Controles */
+        .controls {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: opacity 0.3s;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        #progress {
+            font-weight: bold;
+            color: #7f8c8d;
+        }
+
+        .hint {
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>GEMINI</h1>
+        <p>Estudo Ativo para IA</p>
+    </header>
+
+    <div class="flashcard-container" id="card-trigger">
+        <div class="flashcard" id="card-element">
+            <div class="card-face card-front">
+                <h2 id="front-text">Carregando pergunta...</h2>
+            </div>
+            <div class="card-face card-back" id="back-content">
+                </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="prev-btn">Anterior</button>
+        <span id="progress">1 / 10</span>
+        <button id="next-btn">Próximo</button>
+    </div>
+
+    <p class="hint">Dica: Pressione <strong>Espaço</strong> para virar o cartão.</p>
+
+    <script>
+        // Dados dos Flashcards (Active Recall)
+        const flashcards = [
+            // Tipos de Conhecimento
+            {
+                front: "Qual a diferença fundamental entre Conhecimento Declarativo e Procedural?",
+                definition: "Declarativo é o 'quê'; Procedural é o 'como'.",
+                explanation: "O declarativo foca em fatos e afirmações sobre o mundo. O procedural foca em ações, passos e sequências para realizar uma tarefa.",
+                example: "Saber que o céu é azul (Declarativo) vs. saber como pilotar um avião (Procedural)."
+            },
+            {
+                front: "O que caracteriza o Conhecimento Heurístico na IA?",
+                definition: "Conhecimento baseado na experiência e 'regras de ouro'.",
+                explanation: "Diferente de algoritmos exatos, a heurística busca soluções 'boas o suficiente' para problemas complexos onde a busca exaustiva é impossível.",
+                example: "Um médico que identifica uma doença comum por padrão visual antes dos exames."
+            },
+            {
+                front: "Como o conhecimento heurístico auxilia na busca em grafos?",
+                definition: "Reduz o espaço de busca.",
+                explanation: "Ele fornece um 'atalho' mental, priorizando caminhos que parecem mais promissores para atingir o objetivo.",
+                example: "No algoritmo A*, a distância em linha reta até o destino é uma heurística."
+            },
+            // Técnicas de Representação
+            {
+                front: "O que define uma Ontologia em IA?",
+                definition: "Uma especificação formal de uma conceitualização.",
+                explanation: "É um vocabulário comum que define tipos de objetos, propriedades e relacionamentos em um domínio específico, permitindo o compartilhamento de dados.",
+                example: "A Web Semântica utiliza ontologias para que máquinas entendam que 'Apple' pode ser fruta ou empresa."
+            },
+            {
+                front: "Como funcionam as Redes Semânticas?",
+                definition: "Representação através de grafos de nós (objetos) e arcos (relações).",
+                explanation: "Utilizam a herança para transmitir propriedades. Se 'Pássaro' voa e 'Canário' é um 'Pássaro', o sistema infere que o 'Canário' voa.",
+                example: "[Canário] --é um--> [Pássaro] --possui--> [Penas]."
+            },
+            {
+                front: "Qual a vantagem da Lógica de Predicados sobre a Lógica Proposicional?",
+                definition: "Capacidade de expressar relações e quantificação.",
+                explanation: "Permite usar variáveis (x, y) e quantificadores (Para todo, Existe), descrevendo o mundo com muito mais detalhe e precisão matemática.",
+                example: "∀x (Humano(x) → Mortal(x)) - 'Todo humano é mortal'."
+            },
+            {
+                front: "O que são 'Frames' na representação de conhecimento?",
+                definition: "Estruturas de dados para representar situações estereotipadas.",
+                explanation: "Funcionam como registros ou objetos (POO) com 'slots' (atributos) e 'fillers' (valores/procedimentos). Facilitam a organização de conhecimento complexo.",
+                example: "Um Frame 'Quarto de Hotel' teria slots para: Cama, Banheiro, Preço."
+            },
+            {
+                front: "Como operam as Regras de Produção?",
+                definition: "Estruturas do tipo 'SE condição, ENTÃO ação'.",
+                explanation: "São a base de muitos sistemas especialistas. Quando uma condição na memória de trabalho é satisfeita, a regra é disparada.",
+                example: "SE febre > 38 E manchas_pele = sim, ENTÃO diagnóstico = provável_virose."
+            },
+            // Aplicações e Inferência
+            {
+                front: "Qual a função principal de um Sistema Especialista?",
+                definition: "Emular a capacidade de decisão de um especialista humano.",
+                explanation: "Utiliza uma base de conhecimento e um motor de inferência para resolver problemas em domínios restritos e complexos.",
+                example: "Sistemas de diagnóstico médico ou de análise de crédito bancário."
+            },
+            {
+                front: "Diferencie Dedução, Indução e Abdução.",
+                definition: "Dedução (Geral -> Específico), Indução (Específico -> Geral), Abdução (Efeito -> Causa).",
+                explanation: "Dedução garante a verdade. Indução sugere padrões probabilísticos. Abdução busca a explicação mais provável para um fato observado.",
+                example: "Abdução: O chão está molhado, logo, 'deve ter chovido' (hipótese)."
+            },
+            {
+                front: "O que é o 'Motor de Inferência' em um sistema de IA?",
+                definition: "O componente que aplica regras lógicas à base de conhecimento.",
+                explanation: "É o 'cérebro' que decide quais regras aplicar e em que ordem, para derivar novas informações ou chegar a uma conclusão.",
+                example: "Encadeamento para frente (forward chaining) partindo dos fatos para o objetivo."
+            }
+        ];
+
+        let currentIndex = 0;
+
+        // Elementos do DOM
+        const cardElement = document.getElementById('card-element');
+        const cardTrigger = document.getElementById('card-trigger');
+        const frontText = document.getElementById('front-text');
+        const backContent = document.getElementById('back-content');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const progressTxt = document.getElementById('progress');
+
+        // Inicialização
+        function updateCard() {
+            const card = flashcards[currentIndex];
+            
+            // Resetar animação de vira
+            cardElement.classList.remove('is-flipped');
+            
+            // Aguardar um pouco para trocar o texto para não 'spoilar' a resposta durante o flip de volta
+            setTimeout(() => {
+                frontText.innerText = card.front;
+                backContent.innerHTML = `
+                    <h3>Definição:</h3>
+                    <p>${card.definition}</p>
+                    <h3>Explicação:</h3>
+                    <p>${card.explanation}</p>
+                    ${card.example ? `<div class="example"><strong>Exemplo:</strong> ${card.example}</div>` : ''}
+                `;
+            }, 150);
+
+            // Atualizar UI
+            progressTxt.innerText = `${currentIndex + 1} / ${flashcards.length}`;
+            prevBtn.disabled = currentIndex === 0;
+            nextBtn.disabled = currentIndex === flashcards.length - 1;
+        }
+
+        // Eventos
+        cardTrigger.addEventListener('click', () => {
+            cardElement.classList.toggle('is-flipped');
+        });
+
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (currentIndex < flashcards.length - 1) {
+                currentIndex++;
+                updateCard();
+            }
+        });
+
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateCard();
+            }
+        });
+
+        // Atalho Tecla Espaço
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                cardElement.classList.toggle('is-flipped');
+            }
+            if (e.code === 'ArrowRight' && currentIndex < flashcards.length - 1) {
+                currentIndex++;
+                updateCard();
+            }
+            if (e.code === 'ArrowLeft' && currentIndex > 0) {
+                currentIndex--;
+                updateCard();
+            }
+        });
+
+        // Iniciar
+        updateCard();
+    </script>
+</body>
+</html>

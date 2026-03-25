@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flashcards - Representação do Conhecimento</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f5f7fb;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+    }
+
+    .container {
+        text-align: center;
+        width: 90%;
+        max-width: 500px;
+    }
+
+    .card {
+        width: 100%;
+        height: 300px;
+        perspective: 1000px;
+        margin-bottom: 20px;
+    }
+
+    .inner-card {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 0.6s;
+        cursor: pointer;
+    }
+
+    .flipped {
+        transform: rotateY(180deg);
+    }
+
+    .face {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        font-size: 18px;
+    }
+
+    .back {
+        transform: rotateY(180deg);
+        text-align: left;
+        font-size: 16px;
+    }
+
+    .buttons {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    button {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 10px;
+        background: #6c8cff;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    button:hover {
+        background: #4f6ee0;
+    }
+
+    .progress {
+        margin-top: 10px;
+        color: #555;
+    }
+</style>
+</head>
+
+<body>
+<h1>ChatGpt</h1>
+<div class="container">
+    <div class="card" onclick="flipCard()">
+        <div class="inner-card" id="card">
+            <div class="face front" id="front"></div>
+            <div class="face back" id="back"></div>
+        </div>
+    </div>
+
+    <div class="buttons">
+        <button onclick="prevCard()">Anterior</button>
+        <button onclick="nextCard()">Próximo</button>
+    </div>
+
+    <div class="progress" id="progress"></div>
+</div>
+
+<script>
+const flashcards = [
+
+/* TIPOS DE CONHECIMENTO */
+{
+front: "O que diferencia conhecimento declarativo de procedural na prática?",
+back: "<b>Definição:</b> Declarativo descreve fatos; procedural descreve como fazer algo.<br><br><b>Explicação:</b> Declarativo responde 'o que é', enquanto procedural responde 'como fazer'.<br><br><b>Exemplo:</b> Declarativo: 'Paris é capital da França'. Procedural: 'Como dirigir um carro'."
+},
+{
+front: "Por que o conhecimento heurístico não garante respostas corretas?",
+back: "<b>Definição:</b> Baseado em regras práticas e experiências.<br><br><b>Explicação:</b> Ele simplifica decisões, mas pode errar pois não é exato.<br><br><b>Exemplo:</b> 'Se está nublado, pode chover'."
+},
+{
+front: "Compare conhecimento declarativo, procedural e heurístico.",
+back: "<b>Definição:</b> Três formas de representar conhecimento.<br><br><b>Explicação:</b> Declarativo = fatos; Procedural = passos; Heurístico = regras aproximadas.<br><br><b>Exemplo:</b> Receita culinária mistura os três."
+},
+
+/* ONTOLOGIAS */
+{
+front: "O que torna ontologias mais estruturadas que redes semânticas?",
+back: "<b>Definição:</b> Modelo formal de conceitos e relações.<br><br><b>Explicação:</b> Ontologias têm regras rígidas e padronização.<br><br><b>Exemplo:</b> Sistemas de saúde que padronizam doenças."
+},
+{
+front: "Qual a vantagem de usar ontologias em sistemas inteligentes?",
+back: "<b>Definição:</b> Organização formal do conhecimento.<br><br><b>Explicação:</b> Permite interoperabilidade entre sistemas.<br><br><b>Exemplo:</b> Integração entre bancos de dados médicos."
+},
+{
+front: "Compare ontologias e frames.",
+back: "<b>Definição:</b> Ontologias são formais, frames são estruturais.<br><br><b>Explicação:</b> Ontologias focam em significado; frames em atributos.<br><br><b>Exemplo:</b> Frame: 'carro tem cor'; Ontologia: 'carro é veículo'."
+},
+
+/* REDES SEMÂNTICAS */
+{
+front: "Como redes semânticas representam conhecimento?",
+back: "<b>Definição:</b> Grafos de conceitos conectados.<br><br><b>Explicação:</b> Nós = conceitos, arestas = relações.<br><br><b>Exemplo:</b> 'Cachorro → é um → animal'."
+},
+{
+front: "Qual a diferença entre redes semânticas e lógica de predicados?",
+back: "<b>Definição:</b> Gráfico vs formal lógico.<br><br><b>Explicação:</b> Redes são visuais, lógica é matemática.<br><br><b>Exemplo:</b> Rede: grafo; Lógica: Animal(cachorro)."
+},
+{
+front: "Quando usar redes semânticas?",
+back: "<b>Definição:</b> Representação relacional simples.<br><br><b>Explicação:</b> Útil para visualização e IA básica.<br><br><b>Exemplo:</b> Chatbots simples."
+},
+
+/* LÓGICA DE PREDICADOS */
+{
+front: "Por que lógica de predicados é poderosa na IA?",
+back: "<b>Definição:</b> Representação formal baseada em lógica.<br><br><b>Explicação:</b> Permite inferências rigorosas.<br><br><b>Exemplo:</b> ∀x (Humano(x) → Mortal(x))."
+},
+{
+front: "Diferença entre lógica proposicional e de predicados?",
+back: "<b>Definição:</b> Predicados são mais expressivos.<br><br><b>Explicação:</b> Proposicional não usa variáveis.<br><br><b>Exemplo:</b> Predicado: Humano(x)."
+},
+{
+front: "Quando usar lógica de predicados?",
+back: "<b>Definição:</b> Problemas complexos.<br><br><b>Explicação:</b> Quando precisa precisão lógica.<br><br><b>Exemplo:</b> Sistemas jurídicos."
+},
+
+/* FRAMES */
+{
+front: "O que são frames na representação do conhecimento?",
+back: "<b>Definição:</b> Estruturas com atributos.<br><br><b>Explicação:</b> Organizam conhecimento em 'objetos'.<br><br><b>Exemplo:</b> Pessoa: nome, idade."
+},
+{
+front: "Diferença entre frames e objetos da programação?",
+back: "<b>Definição:</b> Conceitos semelhantes.<br><br><b>Explicação:</b> Frames são conceituais; objetos são implementação.<br><br><b>Exemplo:</b> Classe em Java."
+},
+{
+front: "Quando frames são úteis?",
+back: "<b>Definição:</b> Modelagem estruturada.<br><br><b>Explicação:</b> Útil em sistemas de conhecimento.<br><br><b>Exemplo:</b> Cadastro de usuários."
+},
+
+/* REGRAS DE PRODUÇÃO */
+{
+front: "Como funcionam regras de produção?",
+back: "<b>Definição:</b> IF-THEN.<br><br><b>Explicação:</b> Disparam ações com base em condições.<br><br><b>Exemplo:</b> Se febre → tomar remédio."
+},
+{
+front: "Diferença entre regras e lógica formal?",
+back: "<b>Definição:</b> Regras são práticas.<br><br><b>Explicação:</b> Lógica é rigorosa; regras são heurísticas.<br><br><b>Exemplo:</b> Sistema especialista."
+},
+{
+front: "Quando usar regras de produção?",
+back: "<b>Definição:</b> Decisões automatizadas.<br><br><b>Explicação:</b> Fácil implementação.<br><br><b>Exemplo:</b> Diagnóstico médico."
+},
+
+/* APLICAÇÕES */
+{
+front: "O que é um sistema especialista?",
+back: "<b>Definição:</b> Sistema que simula especialista humano.<br><br><b>Explicação:</b> Usa regras e conhecimento.<br><br><b>Exemplo:</b> Diagnóstico médico."
+},
+{
+front: "Diferença entre dedução, indução e abdução?",
+back: "<b>Definição:</b> Tipos de inferência.<br><br><b>Explicação:</b> Dedução = certeza; Indução = generalização; Abdução = melhor hipótese.<br><br><b>Exemplo:</b> Médico diagnosticando."
+},
+{
+front: "Quando usar inferência abdutiva?",
+back: "<b>Definição:</b> Melhor explicação possível.<br><br><b>Explicação:</b> Usada com informações incompletas.<br><br><b>Exemplo:</b> Diagnóstico inicial."
+}
+
+];
+
+let index = 0;
+
+function updateCard() {
+    document.getElementById("front").innerHTML = flashcards[index].front;
+    document.getElementById("back").innerHTML = flashcards[index].back;
+    document.getElementById("progress").innerText = `${index+1}/${flashcards.length}`;
+    document.getElementById("card").classList.remove("flipped");
+}
+
+function flipCard() {
+    document.getElementById("card").classList.toggle("flipped");
+}
+
+function nextCard() {
+    index = (index + 1) % flashcards.length;
+    updateCard();
+}
+
+function prevCard() {
+    index = (index - 1 + flashcards.length) % flashcards.length;
+    updateCard();
+}
+
+document.addEventListener("keydown", function(e) {
+    if (e.code === "Space") {
+        flipCard();
+    }
+});
+
+updateCard();
+</script>
+
+</body>
+</html>
